@@ -1,0 +1,4 @@
+# These end up inside a Linux container; CRLF would break the shebang.
+* text=auto eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf

@@ -1,0 +1,5 @@
+ignored:
+  # DL3018: pin apk package versions. Deliberately not pinned - the image is
+  # rebuilt regularly and should pick up Alpine security updates for
+  # docker-cli/curl/tzdata. The base image tag (alpine:3.20) is pinned instead.
+  - DL3018

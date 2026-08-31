@@ -1,0 +1,26 @@
+services:
+  autostart:
+    image: pakato/docker-autostart:latest
+    container_name: autostart
+    restart: always
+    network_mode: none          # drop this line if you set APPRISE_URL
+    environment:
+      TZ: America/Sao_Paulo
+      INTERVAL: "30"            # seconds between sweeps
+      CONTAINER_LABEL: autostart # or "all" to watch everything
+      STATES: created,exited    # add ,restarting to also watch crash loops
+      SKIP_EXIT_ZERO: "true"    # leave cleanly-stopped containers alone
+      MAX_ATTEMPTS: "5"         # 0 = never give up
+      ATTEMPT_RESET: "3600"     # seconds before the attempt counter resets
+      RESTARTING_GRACE: "300"   # seconds in 'restarting' before reacting
+      RESTARTING_ACTION: notify # notify | restart
+      DRY_RUN: "false"          # log only, change nothing
+      # APPRISE_URL: https://ntfy.example.com/notify/apprise
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - autostart-state:/var/lib/autostart
+    labels:
+      autoheal: "true"          # let autoheal watch the watchdog
+
+volumes:
+  autostart-state:
