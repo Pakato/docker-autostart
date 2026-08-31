@@ -119,6 +119,22 @@ environment:
 It POSTs `{"title": "autostart", "body": "...", "type": "success|failure|warning"}`.
 A failing notification is logged and never blocks a restart.
 
+Two failure modes, distinguished in the log:
+
+```
+WARN   notification rejected: HTTP 502 from https://apprise.example.com/notify/x
+WARN   notification failed: curl: (6) Could not resolve host: ... (curl exit 6)
+```
+
+The first means your endpoint was reached but did not accept the POST — the
+notification service is down or the URL path is wrong. The second means the
+container could not reach it at all; the usual cause is leaving
+`network_mode: none` set while `APPRISE_URL` is configured.
+
+Note the payload is [Apprise API](https://github.com/caronc/apprise-api)
+format (`/notify/{key}`). Bare ntfy expects a different body, so point
+`APPRISE_URL` at an apprise-api instance, not at ntfy directly.
+
 ### Watching the watchdog
 
 The image ships a `HEALTHCHECK` driven by a heartbeat file, so

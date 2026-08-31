@@ -16,6 +16,7 @@ APPRISE_URL="${APPRISE_URL:-}"
 DRY_RUN="${DRY_RUN:-false}"
 STATE_DIR="${STATE_DIR:-/var/lib/autostart}"
 HEARTBEAT="${HEARTBEAT:-/tmp/autostart.alive}"
+CURL_ERR=/tmp/autostart.curlerr
 
 mkdir -p "$STATE_DIR"
 
@@ -31,10 +32,18 @@ notify() {
     [ -n "$APPRISE_URL" ] || return 0
     _body=$(json_escape "$1")
     _type="${2:-info}"
-    curl -fsS -m 10 -X POST -H 'Content-Type: application/json' \
+    # No -f: capture the HTTP status instead of a generic exit code, so a
+    # broken endpoint says WHY in the log instead of just "failed".
+    _code=$(curl -sS -m 10 -o /dev/null -w '%{http_code}' \
+        -X POST -H 'Content-Type: application/json' \
         -d "{\"title\":\"autostart\",\"body\":\"$_body\",\"type\":\"$_type\"}" \
-        "$APPRISE_URL" >/dev/null 2>&1 ||
-        log "WARN   notification failed"
+        "$APPRISE_URL" 2>"$CURL_ERR")
+    _rc=$?
+    if [ "$_rc" -ne 0 ]; then
+        log "WARN   notification failed: $(tr -d '\r\n' <"$CURL_ERR") (curl exit $_rc)"
+    elif [ "$_code" -lt 200 ] || [ "$_code" -ge 300 ]; then
+        log "WARN   notification rejected: HTTP $_code from $APPRISE_URL"
+    fi
 }
 
 counter_get() { if [ -f "$STATE_DIR/$1.count" ]; then cat "$STATE_DIR/$1.count"; else echo 0; fi; }
