@@ -222,7 +222,6 @@ container does not get hammered forever.
 | `latest` | Newest release. |
 | `1`, `1.2`, `1.2.3` | Semver, from git tags. |
 | `main` | Newest commit on `main`. |
-| `sha-abc1234` | One exact commit. |
 
 Built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`, so it runs on a
 Raspberry Pi as-is.
