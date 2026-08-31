@@ -11,7 +11,7 @@ It fills the gap left by the two usual tools:
 | [willfarrell/autoheal](https://github.com/willfarrell/docker-autoheal) | **running** containers | health check reports `unhealthy` |
 | **docker-autostart** | **stopped** containers | a container is sitting in `created` / `exited` / crash-looping |
 
-Alpine + `docker-cli` + a shell loop. About 30 MB, no daemon, no database.
+Alpine + `docker-cli` + a shell loop. About 15 MB to pull, no daemon, no database.
 
 ---
 
