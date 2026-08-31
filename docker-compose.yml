@@ -7,6 +7,7 @@ services:
     environment:
       TZ: America/Sao_Paulo
       INTERVAL: "30"            # seconds between sweeps
+      STARTUP_DELAY: "5"        # seconds to wait before the first sweep
       CONTAINER_LABEL: autostart # or "all" to watch everything
       STATES: created,exited    # add ,restarting to also watch crash loops
       SKIP_EXIT_ZERO: "true"    # leave cleanly-stopped containers alone

@@ -5,6 +5,7 @@
 set -u
 
 INTERVAL="${INTERVAL:-30}"
+STARTUP_DELAY="${STARTUP_DELAY:-5}"
 CONTAINER_LABEL="${CONTAINER_LABEL:-autostart}"
 STATES="${STATES:-created,exited}"
 SKIP_EXIT_ZERO="${SKIP_EXIT_ZERO:-true}"
@@ -156,12 +157,23 @@ else
     LABEL_FILTER="--filter label=${CONTAINER_LABEL}=true"
     log "watching containers labelled ${CONTAINER_LABEL}=true"
 fi
-log "states=$STATES interval=${INTERVAL}s max_attempts=$MAX_ATTEMPTS skip_exit_zero=$SKIP_EXIT_ZERO dry_run=$DRY_RUN"
+log "states=$STATES interval=${INTERVAL}s startup_delay=${STARTUP_DELAY}s max_attempts=$MAX_ATTEMPTS skip_exit_zero=$SKIP_EXIT_ZERO dry_run=$DRY_RUN"
 
 docker version >/dev/null 2>&1 || {
     log "FATAL  cannot talk to the Docker API - check the socket mount or DOCKER_HOST"
     exit 1
 }
+
+# Give the Docker daemon and the rest of the stack a moment to settle after a
+# host boot, so the first sweep does not fight containers that are already on
+# their way up. The heartbeat is written first to keep HEALTHCHECK happy, and
+# the sleep is backgrounded so a docker stop is still answered immediately.
+if [ "$STARTUP_DELAY" -gt 0 ] && [ "$RUNNING" -eq 1 ]; then
+    touch "$HEARTBEAT"
+    log "waiting ${STARTUP_DELAY}s before the first sweep"
+    sleep "$STARTUP_DELAY" &
+    wait $! 2>/dev/null || true
+fi
 
 while [ "$RUNNING" -eq 1 ]; do
     touch "$HEARTBEAT"

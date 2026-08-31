@@ -72,6 +72,7 @@ Everything is an environment variable. Defaults are in bold.
 | Variable | Default | What it does |
 |---|---|---|
 | `INTERVAL` | **30** | Seconds between sweeps. |
+| `STARTUP_DELAY` | **5** | Seconds to wait before the *first* sweep, so a host reboot has a moment to settle and the watchdog does not fight containers that are already coming up. `0` sweeps immediately. |
 | `CONTAINER_LABEL` | **autostart** | Only containers labelled `<value>=true` are watched. Set to `all` to watch every container on the host. |
 | `STATES` | **created,exited** | Comma-separated states to act on. Add `restarting` to also react to crash loops. |
 | `SKIP_EXIT_ZERO` | **true** | Ignore containers that exited with code 0 — they either finished their job or you stopped them on purpose. Set to `false` to restart those too. |
