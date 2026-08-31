@@ -80,6 +80,9 @@ Everything is an environment variable. Defaults are in bold.
 | `ATTEMPT_RESET` | **3600** | Seconds of quiet before a container's attempt counter resets. The counter also resets the moment the container is seen running. |
 | `RESTARTING_GRACE` | **300** | How long a container may sit in `restarting` before it counts as a crash loop. |
 | `RESTARTING_ACTION` | **notify** | `notify` (log + notification only) or `restart` (force a `docker restart`). |
+| `FLAP_THRESHOLD` | **5** | Restarts within `FLAP_WINDOW` before a container is treated as broken and quarantined. `0` disables flap detection. |
+| `FLAP_WINDOW` | **600** | The rolling window, in seconds, that `FLAP_THRESHOLD` counts over — and how long a container must run cleanly before quarantine lifts. |
+| `FLAP_ACTION` | **notify** | `notify` (quarantine and tell you) or `stop` (also `docker stop` the container, which is what breaks an *external* restart loop). |
 | `DRY_RUN` | **false** | Log what would happen and change nothing. Good for a first run with `CONTAINER_LABEL=all`. |
 | `APPRISE_URL` | *(empty)* | Apprise / ntfy endpoint to POST notifications to. Empty disables notifications. |
 | `TZ` | *(UTC)* | Timezone for log timestamps. |
@@ -135,6 +138,52 @@ container could not reach it at all; the usual cause is leaving
 Note the payload is [Apprise API](https://github.com/caronc/apprise-api)
 format (`/notify/{key}`). Bare ntfy expects a different body, so point
 `APPRISE_URL` at an apprise-api instance, not at ntfy directly.
+
+### When a container is simply broken
+
+Six restarts in five minutes is not a container that needs restarting harder.
+docker-autostart watches every container's `.State.StartedAt` and counts how
+often it changes. Because it watches the *container* rather than its own
+attempts, it catches the loop no matter who is driving it — this script, a
+Docker `restart:` policy, or an external healer like autoheal repeatedly
+restarting something whose health check can never pass.
+
+Past `FLAP_THRESHOLD` restarts inside `FLAP_WINDOW`, the container is
+**quarantined**: it is left alone, and you get told once.
+
+```
+FLAP   teamspeak-db restarted (4 in the last 600s, health=unhealthy)
+FLAP   teamspeak-db restarted (5 in the last 600s, health=unhealthy)
+QUAR   teamspeak-db flapped 5 times in 600s (health=unhealthy) -> will not restart it again
+```
+
+Quarantine lifts by itself once the container has run for a full `FLAP_WINDOW`
+without restarting and without being `unhealthy`:
+
+```
+OK     teamspeak-db has run 600s without flapping -> lifting quarantine
+```
+
+**`FLAP_ACTION: notify` only stops *this* container from restarting it.** If
+something else is driving the loop — autoheal, most commonly — that keeps
+going. Use `stop` to end it outright:
+
+```yaml
+environment:
+  FLAP_ACTION: stop
+```
+
+Then the container is stopped and stays stopped. autoheal only ever looks at
+*running* containers, so stopping it takes the container out of its reach; and
+this script will not start it again while it is quarantined. Nothing restarts
+it until you fix it and start it yourself.
+
+Give-ups are announced too. Previously a container that failed `MAX_ATTEMPTS`
+starts went quiet, which looked identical to everything being fine:
+
+```
+GIVEUP db failed 5 starts in a row (exited code=1) - leaving it alone
+```
 
 ### Watching the watchdog
 

@@ -15,6 +15,9 @@ services:
       ATTEMPT_RESET: "3600"     # seconds before the attempt counter resets
       RESTARTING_GRACE: "300"   # seconds in 'restarting' before reacting
       RESTARTING_ACTION: notify # notify | restart
+      FLAP_THRESHOLD: "5"       # restarts within FLAP_WINDOW that mean "broken"
+      FLAP_WINDOW: "600"        # seconds
+      FLAP_ACTION: notify       # notify | stop
       DRY_RUN: "false"          # log only, change nothing
       # APPRISE_URL: https://ntfy.example.com/notify/apprise
     volumes:
